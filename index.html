@@ -74,7 +74,7 @@
 
 
         // *** GET URL FROM SERVER-SIDE TEMPLATE ***
-        const GAS_WEB_APP_URL = "<?= appUrl ?>"; 
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQyzMoNR0hJp28cyPgpxmRew_W10WxesiYSFOwuiQ_NhjrtbTzJSw9nKabFfRGL3fyGw/exec"; 
 
         const App = () => {
             const [departments, setDepartments] = useState(['Front Office', 'Housekeeping', 'Kitchen']);
@@ -158,7 +158,7 @@
 
             // --- Fetch ---
             const fetchData = useCallback(async () => {
-                if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbxQyzMoNR0hJp28cyPgpxmRew_W10WxesiYSFOwuiQ_NhjrtbTzJSw9nKabFfRGL3fyGw/exec)) return; 
+                if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("<?= appUrl ?>")) return; 
                 setIsLoading(true);
                 try {
                     const deptParam = currentDept === 'ALL' ? '' : currentDept;
