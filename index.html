@@ -30,9 +30,12 @@
         
         /* Print Adjustments */
         @media print {
-            body {
+            * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            body {
                 background-color: white !important;
             }
             @page {
@@ -47,6 +50,10 @@
                 overflow: visible !important;
                 height: auto !important;
             }
+            /* Hide standard UI elements */
+            nav, aside, .print-hidden {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -56,74 +63,25 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback } = React;
 
-        // --- Icon Setup (Creating React Components from Lucide Global) ---
+        // --- Icon Setup ---
         const Icon = ({ name, size = 16, className, ...props }) => {
             const lucideIcon = lucide.icons[name];
             if (!lucideIcon) return null;
-            
-            return React.createElement('svg', {
-                ...props,
-                width: size,
-                height: size,
-                className: className,
-                viewBox: "0 0 24 24",
-                fill: "none",
-                stroke: "currentColor",
-                strokeWidth: "2",
-                strokeLinecap: "round",
-                strokeLinejoin: "round",
-                dangerouslySetInnerHTML: { __html: lucideIcon.map(child => 
-                    `<${child[0]} ${Object.entries(child[1]).map(([k, v]) => `${k}="${v}"`).join(' ')} />`
-                ).join('') }
-            });
+            return React.createElement('svg', { ...props, width: size, height: size, className: className, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", dangerouslySetInnerHTML: { __html: lucideIcon.map(child => `<${child[0]} ${Object.entries(child[1]).map(([k, v]) => `${k}="${v}"`).join(' ')} />`).join('') } });
         };
-
-        // Create specific icon components for convenience
-        const Users = (props) => <Icon name="Users" {...props} />;
-        const Save = (props) => <Icon name="Save" {...props} />;
-        const ChevronLeft = (props) => <Icon name="ChevronLeft" {...props} />;
-        const ChevronRight = (props) => <Icon name="ChevronRight" {...props} />;
-        const Lock = (props) => <Icon name="Lock" {...props} />;
-        const Unlock = (props) => <Icon name="Unlock" {...props} />;
-        const Menu = (props) => <Icon name="Menu" {...props} />;
-        const X = (props) => <Icon name="X" {...props} />;
-        const Plus = (props) => <Icon name="Plus" {...props} />;
-        const Trash2 = (props) => <Icon name="Trash2" {...props} />;
-        const Loader2 = (props) => <Icon name="Loader2" {...props} />;
-        const AlertCircle = (props) => <Icon name="AlertCircle" {...props} />;
-        const CheckCircle2 = (props) => <Icon name="CheckCircle2" {...props} />;
-        const Settings = (props) => <Icon name="Settings" {...props} />;
-        const Briefcase = (props) => <Icon name="Briefcase" {...props} />;
-        const Edit3 = (props) => <Icon name="Edit3" {...props} />;
-        const Check = (props) => <Icon name="Check" {...props} />;
-        const LayoutDashboard = (props) => <Icon name="LayoutDashboard" {...props} />;
-        const CalendarDays = (props) => <Icon name="CalendarDays" {...props} />;
-        const RefreshCw = (props) => <Icon name="RefreshCw" {...props} />;
-        const MessageSquare = (props) => <Icon name="MessageSquare" {...props} />;
-        const PenLine = (props) => <Icon name="PenLine" {...props} />;
-        const ChevronDown = (props) => <Icon name="ChevronDown" {...props} />;
-        const KeyRound = (props) => <Icon name="KeyRound" {...props} />;
-        const UserCircle = (props) => <Icon name="UserCircle" {...props} />;
-        const ArrowLeft = (props) => <Icon name="ArrowLeft" {...props} />;
-        const Archive = (props) => <Icon name="Archive" {...props} />;
-        const RotateCcw = (props) => <Icon name="RotateCcw" {...props} />;
-        const Search = (props) => <Icon name="Search" {...props} />;
+        const Icons = ['Users','Save','ChevronLeft','ChevronRight','Lock','Unlock','Menu','X','Plus','Trash2','Loader2','AlertCircle','CheckCircle2','Settings','Briefcase','Edit3','Check','LayoutDashboard','CalendarDays','PieChart','RefreshCw','MessageSquare','PenLine','ChevronDown','KeyRound','UserCircle','ArrowLeft','Archive','RotateCcw','UserX','Maximize2','Minimize2','Search','Printer'].reduce((acc, name) => ({...acc, [name]: (props) => <Icon name={name} {...props} />}), {});
+        const { Users, Save, ChevronLeft, ChevronRight, Lock, Unlock, Menu, X, Plus, Trash2, Loader2, AlertCircle, CheckCircle2, Settings, Briefcase, Edit3, Check, LayoutDashboard, CalendarDays, RefreshCw, MessageSquare, PenLine, ChevronDown, KeyRound, UserCircle, ArrowLeft, Archive, RotateCcw, UserX, Search, Printer } = Icons;
 
 
         // *** GET URL FROM SERVER-SIDE TEMPLATE ***
-        const GAS_WEB_APP_URL = "<?= url ?>"; 
+        const GAS_WEB_APP_URL = "<?= appUrl ?>"; 
 
         const App = () => {
-             // --- State ---
             const [departments, setDepartments] = useState(['Front Office', 'Housekeeping', 'Kitchen']);
-            const [currentDept, setCurrentDept] = useState('Front Office'); // Can be 'ALL'
+            const [currentDept, setCurrentDept] = useState('Front Office');
             
-            const [staff, setStaff] = useState([
-                { id: 'staff-1', name: 'สมชาย ใจดี', dept: 'Front Office', isArchived: false },
-                { id: 'staff-2', name: 'วิไลวรรณ รักงาน', dept: 'Front Office', isArchived: false },
-                { id: 'staff-3', name: 'John Doe', dept: 'Front Office', isArchived: false },
-                { id: 'staff-4', name: 'สมศรี มีสุข', dept: 'Housekeeping', isArchived: false },
-            ]);
+            // เริ่มต้นด้วย Array ว่าง (รอโหลดจาก Backend)
+            const [staff, setStaff] = useState([]);
 
             const [schedule, setSchedule] = useState({});
             const [highlightedDays, setHighlightedDays] = useState([]);
@@ -131,27 +89,25 @@
             const [baseDate, setBaseDate] = useState(new Date()); 
             const [selectedCell, setSelectedCell] = useState(null); 
             
-            // --- Sidebar UX State ---
-            // ปิด Depts และ Staff เริ่มต้น
+            // Sidebar State
             const [expandedSections, setExpandedSections] = useState({ menu: true, depts: false, staff: false }); 
             const [staffSearch, setStaffSearch] = useState(''); 
 
-            // --- Detail Modal State ---
+            // Detail Modal
             const [selectedStaffDetail, setSelectedStaffDetail] = useState(null); 
             const [detailViewType, setDetailViewType] = useState('period'); 
 
-            // --- Archive / Delete State ---
+            // Archive / Delete
             const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
             const [staffToDelete, setStaffToDelete] = useState(null);
             const [showArchivedList, setShowArchivedList] = useState(false); 
 
-            // --- Mode & Password State ---
+            // Mode & Password
             const [isEditMode, setIsEditMode] = useState(false);
             const [serverPassword, setServerPassword] = useState('199'); 
             const [inputPassword, setInputPassword] = useState('');
             const [showLoginModal, setShowLoginModal] = useState(false);
             const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-            
             const [oldPasswordInput, setOldPasswordInput] = useState('');
             const [newPasswordInput, setNewPasswordInput] = useState('');
             const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
@@ -171,33 +127,23 @@
             const [editingDeptIndex, setEditingDeptIndex] = useState(null);
             const [editingDeptValue, setEditingDeptValue] = useState('');
 
-            // --- Helper: Toggle Sidebar Section ---
-            const toggleSection = (section) => {
-                setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
-            };
+            const toggleSection = (section) => setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
 
-            // --- Date Range Logic ---
+            // --- Date Logic ---
             const getPeriodDays = useCallback((date) => {
                 const days = [];
                 let start = new Date(date.getFullYear(), date.getMonth(), 21);
-                if (date.getDate() < 21) {
-                start = new Date(date.getFullYear(), date.getMonth() - 1, 21);
-                }
+                if (date.getDate() < 21) start = new Date(date.getFullYear(), date.getMonth() - 1, 21);
                 const end = new Date(start.getFullYear(), start.getMonth() + 1, 20);
                 let current = new Date(start);
                 current.setHours(0, 0, 0, 0);
                 const endCompare = new Date(end);
                 endCompare.setHours(0, 0, 0, 0);
-                while (current <= endCompare) {
-                days.push(new Date(current));
-                current.setDate(current.getDate() + 1);
-                }
+                while (current <= endCompare) { days.push(new Date(current)); current.setDate(current.getDate() + 1); }
                 return days;
             }, []);
-
             const currentDays = getPeriodDays(baseDate);
             const periodKey = `${currentDays[0].getFullYear()}-${(currentDays[0].getMonth() + 1).toString().padStart(2, '0')}`;
-
             const formatPeriodLabel = () => {
                 if (currentDays.length === 0) return "";
                 const start = currentDays[0];
@@ -205,73 +151,46 @@
                 const options = { day: 'numeric', month: 'short', year: 'numeric' };
                 return `${start.toLocaleDateString('th-TH', options)} - ${end.toLocaleDateString('th-TH', options)}`;
             };
-
             const formatDateLabel = (dateStr) => {
                 const date = new Date(dateStr);
                 return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
             };
 
-            // --- CRUD Operations ---
+            // --- Fetch ---
             const fetchData = useCallback(async () => {
-                if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbxQyzMoNR0hJp28cyPgpxmRew_W10WxesiYSFOwuiQ_NhjrtbTzJSw9nKabFfRGL3fyGw/exec")) {
-                    // Demo mode if no URL (local testing) or template not rendered
-                    console.log("Running in local/demo mode");
-                    // return; // Uncomment to stop fetching in demo
-                }
-                
+                if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("https://script.google.com/macros/s/AKfycbxQyzMoNR0hJp28cyPgpxmRew_W10WxesiYSFOwuiQ_NhjrtbTzJSw9nKabFfRGL3fyGw/exec)) return; 
                 setIsLoading(true);
                 try {
                     const deptParam = currentDept === 'ALL' ? '' : currentDept;
-                    
                     const resp = await fetch(`${GAS_WEB_APP_URL}?period=${periodKey}&dept=${deptParam}`);
                     const data = await resp.json();
                     setSchedule(data.schedule || {});
                     setStaff(data.staff || []);
                     setHighlightedDays(data.highlightedDays || []);
                     setStaffRemarks(data.staffRemarks || {});
-                    
-                    if (data.appPassword) {
-                        setServerPassword(data.appPassword);
-                    }
-
-                    if (data.departments && data.departments.length > 0) {
-                        setDepartments(data.departments);
-                    }
+                    if (data.appPassword) setServerPassword(data.appPassword);
+                    if (data.departments && data.departments.length > 0) setDepartments(data.departments);
                     showStatus('success', 'อัปเดตข้อมูลเรียบร้อย');
-                } catch (err) {
-                    console.error(err);
-                    // showStatus('error', 'การเชื่อมต่อฐานข้อมูลล้มเหลว'); // Disable error on initial load for smoother UX
-                } finally {
-                    setIsLoading(false);
-                }
+                } catch (err) { console.error(err); } finally { setIsLoading(false); }
             }, [periodKey, currentDept]);
 
             const fetchYearlyData = async () => {
+                if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("<?= appUrl ?>")) return;
                 setIsYearlyLoading(true);
                 const months = Array.from({length: 12}, (_, i) => i + 1);
                 const deptParam = currentDept === 'ALL' ? '' : currentDept;
-                
-                const promises = months.map(m => {
-                    const pKey = `${selectedYear}-${m.toString().padStart(2, '0')}`;
-                    return fetch(`${GAS_WEB_APP_URL}?period=${pKey}&dept=${deptParam}`)
-                        .then(res => res.json())
-                        .then(data => ({ month: m, data }))
-                        .catch(err => ({ month: m, data: { schedule: {} } }));
-                });
-
                 try {
+                    const promises = months.map(m => {
+                        const pKey = `${selectedYear}-${m.toString().padStart(2, '0')}`;
+                        return fetch(`${GAS_WEB_APP_URL}?period=${pKey}&dept=${deptParam}`).then(res => res.json()).catch(err => ({ schedule: {} }));
+                    });
                     const results = await Promise.all(promises);
                     const aggregated = {};
                     results.forEach(({ data }) => {
                         const monthSchedule = data.schedule || {};
                         Object.entries(monthSchedule).forEach(([key, val]) => {
                             const [empId] = key.split('-');
-                            if (!aggregated[empId]) {
-                                aggregated[empId] = {
-                                    work: 0, off: 0, holidayWork: 0, leave: 0,
-                                    details: { 'ร้อน': 0, 'กิจ': 0, 'ป่วย': 0, 'อื่นๆ': 0 }
-                                };
-                            }
+                            if (!aggregated[empId]) aggregated[empId] = { work: 0, off: 0, holidayWork: 0, leave: 0, details: { 'ร้อน': 0, 'กิจ': 0, 'ป่วย': 0, 'อื่นๆ': 0 } };
                             const shift = val.shift;
                             if (shift === 'D' || shift === 'N') aggregated[empId].work++;
                             if (shift === 'OFF') aggregated[empId].off++;
@@ -284,385 +203,147 @@
                         });
                     });
                     setYearlyStats(aggregated);
-                } catch (err) {
-                    console.error(err);
-                } finally {
-                    setIsYearlyLoading(false);
-                }
+                } catch (err) { console.error(err); } finally { setIsYearlyLoading(false); }
             };
 
-            useEffect(() => {
-                if (viewMode === 'dashboard' && dashboardType === 'yearly') {
-                    fetchYearlyData();
-                }
-            }, [viewMode, dashboardType, selectedYear, currentDept]);
+            useEffect(() => { if (viewMode === 'dashboard' && dashboardType === 'yearly') fetchYearlyData(); }, [viewMode, dashboardType, selectedYear, currentDept]);
+            useEffect(() => { if (GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes("<?= appUrl ?>")) fetchData(); }, [fetchData]);
 
             const handleSave = async () => {
+                if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("<?= appUrl ?>")) return showStatus('error', 'Demo Mode');
                 setIsLoading(true);
                 try {
                     const deptParam = currentDept === 'ALL' ? '' : currentDept;
-                    const payload = {
-                        period: periodKey,
-                        dept: deptParam,
-                        schedule,
-                        staff,
-                        highlightedDays,
-                        staffRemarks,
-                        departments 
-                    };
-                    await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        redirect: "follow",
-                        headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify(payload)
-                    });
+                    const payload = { period: periodKey, dept: deptParam, schedule, staff, highlightedDays, staffRemarks, departments };
+                    await fetch(GAS_WEB_APP_URL, { method: 'POST', redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
                     showStatus('success', 'บันทึกข้อมูลเรียบร้อย');
-                    setIsEditMode(false);
-                    setSelectedCell(null); 
-                } catch (err) {
-                    console.error(err);
-                    showStatus('error', 'ไม่สามารถบันทึกข้อมูลได้');
-                } finally {
-                    setIsLoading(false);
-                }
+                    setIsEditMode(false); setSelectedCell(null); 
+                } catch (err) { showStatus('error', 'บันทึกไม่สำเร็จ'); } finally { setIsLoading(false); }
             };
 
-            // --- Password & Login Handlers ---
-            const handleEditModeToggle = () => {
-                if (isEditMode) {
-                    setIsEditMode(false);
-                } else {
-                    setInputPassword('');
-                    setShowLoginModal(true);
-                }
-            };
-
-            const submitLogin = (e) => {
-                e.preventDefault();
-                if (inputPassword === serverPassword) {
-                    setIsEditMode(true);
-                    setShowLoginModal(false);
-                    showStatus('success', 'Edit Mode Enabled');
-                } else {
-                    showStatus('error', 'Incorrect Password');
-                }
-            };
-
-            const submitChangePassword = async (e) => {
-                e.preventDefault();
-                if (oldPasswordInput !== serverPassword) return showStatus('error', 'รหัสผ่านเดิมไม่ถูกต้อง');
-                if (!newPasswordInput.trim()) return showStatus('error', 'กรุณากรอกรหัสผ่านใหม่');
-                if (newPasswordInput !== confirmPasswordInput) return showStatus('error', 'รหัสผ่านใหม่ไม่ตรงกัน');
-                
-                setIsLoading(true);
-                try {
-                    const payload = {
-                        action: 'updatePassword',
-                        newPassword: newPasswordInput
-                    };
-                    await fetch(GAS_WEB_APP_URL, {
-                        method: 'POST',
-                        redirect: "follow",
-                        headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify(payload)
-                    });
-                    setServerPassword(newPasswordInput);
-                    setShowChangePasswordModal(false);
-                    showStatus('success', 'อัปเดตรหัสผ่านเรียบร้อย');
-                } catch (err) {
-                    showStatus('error', 'ไม่สามารถเปลี่ยนรหัสผ่านได้');
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-
-            const openChangePasswordModal = () => {
-                setOldPasswordInput('');
-                setNewPasswordInput('');
-                setConfirmPasswordInput('');
-                setShowChangePasswordModal(true);
-            };
-
-            useEffect(() => {
-                if (GAS_WEB_APP_URL) fetchData();
-            }, [fetchData]);
-
-            const showStatus = (type, msg) => {
-                setStatus({ type, msg });
-                setTimeout(() => setStatus({ type: '', msg: '' }), 3000);
-            };
-
+            // --- Handlers ---
+            const showStatus = (type, msg) => { setStatus({ type, msg }); setTimeout(() => setStatus({ type: '', msg: '' }), 3000); };
+            const handleEditModeToggle = () => { if (isEditMode) setIsEditMode(false); else { setInputPassword(''); setShowLoginModal(true); } };
+            const submitLogin = (e) => { e.preventDefault(); if (inputPassword === serverPassword) { setIsEditMode(true); setShowLoginModal(false); showStatus('success', 'Edit Mode Enabled'); } else showStatus('error', 'Incorrect Password'); };
+            const submitChangePassword = async (e) => { e.preventDefault(); if (oldPasswordInput !== serverPassword) return showStatus('error', 'รหัสเดิมผิด'); if (!newPasswordInput.trim() || newPasswordInput !== confirmPasswordInput) return showStatus('error', 'รหัสใหม่ไม่ถูกต้อง'); if(!GAS_WEB_APP_URL) return showStatus('success', 'Demo Change OK'); setIsLoading(true); try { await fetch(GAS_WEB_APP_URL, { method: 'POST', headers: {"Content-Type": "text/plain"}, body: JSON.stringify({action: 'updatePassword', newPassword: newPasswordInput}) }); setServerPassword(newPasswordInput); setShowChangePasswordModal(false); showStatus('success', 'เปลี่ยนรหัสสำเร็จ'); } catch(e){ showStatus('error', 'Error'); } finally { setIsLoading(false); } };
+            const openChangePasswordModal = () => { setOldPasswordInput(''); setNewPasswordInput(''); setConfirmPasswordInput(''); setShowChangePasswordModal(true); };
+            
             const handleCellClick = (staffId, dateStr) => {
                 if (!isEditMode) return;
                 const key = `${staffId}-${dateStr}`;
                 const shifts = ['D', 'N', 'OFF', 'H', 'ร้อน', 'กิจ', 'ป่วย', 'อื่นๆ'];
                 const currentData = schedule[key] || { shift: 'D' };
-                const currentShift = currentData.shift;
-                
-                let nextIndex = shifts.indexOf(currentShift) + 1;
-                if (nextIndex >= shifts.length || nextIndex === 0) {
-                    if (shifts.indexOf(currentShift) === -1) nextIndex = 0;
-                    if (nextIndex >= shifts.length) nextIndex = 0;
-                }
-                const nextShift = shifts[nextIndex];
-                
-                setSchedule(prev => ({
-                    ...prev,
-                    [key]: { ...prev[key], shift: nextShift } 
-                }));
+                const nextIndex = (shifts.indexOf(currentData.shift) + 1) % shifts.length;
+                setSchedule(prev => ({ ...prev, [key]: { ...prev[key], shift: shifts[nextIndex] } }));
             };
+            const handleCellContextMenu = (e, staffId, dateStr, staffName) => { e.preventDefault(); setSelectedCell({ id: staffId, date: dateStr, name: staffName }); };
+            const updateSelectedRemark = (val) => { if (!selectedCell) return; setSchedule(prev => ({ ...prev, [`${selectedCell.id}-${selectedCell.date}`]: { ...prev[`${selectedCell.id}-${selectedCell.date}`], remark: val } })); };
+            const toggleHighlight = (dateStr) => { if (isEditMode) setHighlightedDays(prev => prev.includes(dateStr) ? prev.filter(d => d !== dateStr) : [...prev, dateStr]); };
+            const handleStaffRemarkChange = (id, val) => setStaffRemarks(prev => ({ ...prev, [id]: val }));
+            
+            const handleAddDept = () => { const n = newDeptName.trim(); if(n && !departments.includes(n)) { setDepartments([...departments, n]); setCurrentDept(n); setNewDeptName(''); }};
+            const removeDept = (d) => { if(departments.length > 1) { const f = departments.filter(x => x !== d); setDepartments(f); if(currentDept === d) setCurrentDept(f[0]); }};
+            const startEditDept = (i, v) => { setEditingDeptIndex(i); setEditingDeptValue(v); };
+            const saveEditDept = (old) => { const n = editingDeptValue.trim(); if(n && n!==old) { const nd = [...departments]; nd[editingDeptIndex] = n; setDepartments(nd); setStaff(prev => prev.map(s => s.dept === old ? {...s, dept: n} : s)); if(currentDept === old) setCurrentDept(n); } setEditingDeptIndex(null); };
+            
+            const handleAddStaff = () => { const n = newStaffName.trim(); if(n && !staff.some(s => s.name === n && s.dept === currentDept)) { setStaff([...staff, { id: `staff-${Date.now()}`, name: n, dept: currentDept, isArchived: false }]); setNewStaffName(''); }};
+            const promptDeleteStaff = (s) => { setStaffToDelete(s); setShowDeleteConfirm(true); };
+            const confirmArchiveStaff = () => { if(staffToDelete) { setStaff(staff.map(s => s.id === staffToDelete.id ? {...s, isArchived: true} : s)); showStatus('success', 'Archived'); } setShowDeleteConfirm(false); setStaffToDelete(null); };
+            const restoreStaff = (id) => { setStaff(staff.map(s => s.id === id ? {...s, isArchived: false} : s)); showStatus('success', 'Restored'); };
 
-            const handleCellContextMenu = (e, staffId, dateStr, staffName) => {
-                e.preventDefault(); 
-                setSelectedCell({ id: staffId, date: dateStr, name: staffName });
-            };
-
-            const updateSelectedRemark = (newRemark) => {
-                if (!selectedCell) return;
-                const key = `${selectedCell.id}-${selectedCell.date}`;
-                setSchedule(prev => ({
-                    ...prev,
-                    [key]: { ...prev[key], remark: newRemark }
-                }));
-            };
-
-            const toggleHighlight = (dateStr) => {
-                if (!isEditMode) return;
-                setHighlightedDays(prev => 
-                    prev.includes(dateStr) ? prev.filter(d => d !== dateStr) : [...prev, dateStr]
-                );
-            };
-
-            const handleStaffRemarkChange = (staffId, value) => {
-                setStaffRemarks(prev => ({ ...prev, [staffId]: value }));
-            };
-
-            const handleAddDept = () => {
-                const name = newDeptName.trim();
-                if (!name || departments.includes(name)) return;
-                setDepartments([...departments, name]);
-                setCurrentDept(name); 
-                setNewDeptName('');
-            };
-
-            const removeDept = (target) => {
-                if (departments.length <= 1) return;
-                const filtered = departments.filter(d => d !== target);
-                setDepartments(filtered);
-                if (currentDept === target) setCurrentDept(filtered[0]);
-            };
-
-            const startEditDept = (index, value) => {
-                setEditingDeptIndex(index);
-                setEditingDeptValue(value);
-            };
-
-            const saveEditDept = (oldName) => {
-                const newName = editingDeptValue.trim();
-                if (!newName || newName === oldName) {
-                    setEditingDeptIndex(null);
-                    return;
-                }
-                const newDepts = [...departments];
-                newDepts[editingDeptIndex] = newName;
-                setDepartments(newDepts);
-                setStaff(prevStaff => prevStaff.map(s => s.dept === oldName ? { ...s, dept: newName } : s));
-                if (currentDept === oldName) setCurrentDept(newName);
-                setEditingDeptIndex(null);
-            };
-
-            const handleAddStaff = () => {
-                if (!isEditMode) return showStatus('error', 'กรุณาปลดล็อกเพื่อแก้ไข');
-                const name = newStaffName.trim();
-                if (!name) return;
-                if (staff.some(s => s.name === name && s.dept === currentDept)) return;
-                const newPerson = { id: `staff-${Date.now()}`, name: name, dept: currentDept, isArchived: false };
-                setStaff(prev => [...prev, newPerson]);
-                setNewStaffName('');
-            };
-
-            const promptDeleteStaff = (targetStaff) => {
-                setStaffToDelete(targetStaff);
-                setShowDeleteConfirm(true);
-            };
-
-            const confirmArchiveStaff = () => {
-                if (staffToDelete) {
-                    setStaff(staff.map(s => s.id === staffToDelete.id ? { ...s, isArchived: true } : s));
-                    showStatus('success', `ย้ายพนักงาน ${staffToDelete.name} ไปที่คลังข้อมูลเก่าเรียบร้อย`);
-                }
-                setShowDeleteConfirm(false);
-                setStaffToDelete(null);
-            };
-
-            const restoreStaff = (staffId) => {
-                setStaff(staff.map(s => s.id === staffId ? { ...s, isArchived: false } : s));
-                showStatus('success', 'กู้คืนพนักงานเรียบร้อย');
-            };
-
-            const calculateStats = (employeeId) => {
-                let stats = { work: 0, off: 0, holidayWork: 0, leave: 0, details: { D:0, N:0, OFF:0, H:0, ร้อน:0, กิจ:0, ป่วย:0, อื่นๆ:0 } };
-                currentDays.forEach(date => {
-                    const dateStr = date.toISOString().split('T')[0];
-                    const key = `${employeeId}-${dateStr}`;
+            const calculateStats = (id) => {
+                let stats = { work: 0, off: 0, holidayWork: 0, leave: 0, details: { 'ร้อน': 0, 'กิจ': 0, 'ป่วย': 0, 'อื่นๆ': 0 } };
+                currentDays.forEach(d => {
+                    const key = `${id}-${d.toISOString().split('T')[0]}`;
                     const shift = schedule[key]?.shift || 'D';
-                    if (stats.details[shift] !== undefined) stats.details[shift]++;
-                    else stats.details[shift] = (stats.details[shift] || 0) + 1;
-
-                    if (shift === 'D' || shift === 'N') stats.work++;
+                    if (['D','N'].includes(shift)) stats.work++;
                     if (shift === 'OFF') stats.off++;
-                    if (shift === 'H') stats.holidayWork++; 
-                    if (shift === 'OT') stats.holidayWork++; 
-                    if (['ร้อน', 'กิจ', 'ป่วย', 'อื่นๆ'].includes(shift)) stats.leave++;
+                    if (['H','OT'].includes(shift)) stats.holidayWork++;
+                    if (['ร้อน', 'กิจ', 'ป่วย', 'อื่นๆ'].includes(shift)) { stats.leave++; if(stats.details[shift] !== undefined) stats.details[shift]++; }
                 });
                 return stats;
             };
 
-            const getFilteredStaff = () => {
-                return staff.filter(s => {
-                    const deptMatch = currentDept === 'ALL' || s.dept === currentDept;
-                    const archiveMatch = showArchivedList ? s.isArchived : !s.isArchived;
-                    const searchMatch = !staffSearch.trim() || s.name.toLowerCase().includes(staffSearch.toLowerCase());
-                    return deptMatch && archiveMatch && searchMatch;
-                });
-            };
+            const getFilteredStaff = () => staff.filter(s => (currentDept === 'ALL' || s.dept === currentDept) && (showArchivedList ? s.isArchived : !s.isArchived) && (!staffSearch.trim() || s.name.toLowerCase().includes(staffSearch.toLowerCase())));
 
             return (
                 <div className="min-h-screen bg-white font-sans text-slate-900 overflow-x-hidden flex flex-col">
                     
-                    {/* STAFF DETAIL MODAL (IN-PLACE VIEW) */}
+                    {/* --- Print Header --- */}
+                    <div className="hidden print:block mb-6 p-4 border-b border-slate-300">
+                        <h1 className="text-2xl font-black text-slate-900 mb-1">Shift Master - {currentDept === 'ALL' ? 'All Departments' : currentDept}</h1>
+                        <div className="flex justify-between items-end"><p className="text-sm font-bold text-slate-600">ประจำงวด: {formatPeriodLabel()}</p><p className="text-[10px] text-slate-400">พิมพ์เมื่อ: {new Date().toLocaleString('th-TH')}</p></div>
+                    </div>
+
+                    {/* --- Modals --- */}
                     {selectedStaffDetail && (
                         <div className="absolute inset-0 z-[70] bg-white flex flex-col h-full animate-in slide-in-from-bottom-5 duration-300 print:relative print:h-auto print:overflow-visible">
                             <div className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-50 print:border-none print:shadow-none print:relative print:px-0 print:py-0">
-                                <div className="flex items-center gap-4">
-                                    <button onClick={() => setSelectedStaffDetail(null)} className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors border border-slate-200 print:hidden">
-                                        <ArrowLeft size={20} />
-                                    </button>
-                                    <div>
-                                        <h2 className="text-lg font-black text-slate-800 flex items-center gap-2 print:text-2xl">
-                                            {selectedStaffDetail.name}
-                                            {selectedStaffDetail.isArchived && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full print:hidden">Archived</span>}
-                                        </h2>
-                                        <p className="text-xs font-bold text-indigo-500 uppercase tracking-wide print:text-slate-500">{selectedStaffDetail.dept}</p>
-                                    </div>
-                                </div>
-                                <div className="flex bg-slate-100 p-1 rounded-lg print:hidden">
-                                    <button onClick={() => setDetailViewType('period')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${detailViewType === 'period' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>งวดนี้</button>
-                                    <button onClick={() => setDetailViewType('yearly')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${detailViewType === 'yearly' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>รายปี</button>
-                                </div>
+                                <div className="flex items-center gap-4"><button onClick={() => setSelectedStaffDetail(null)} className="p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors border border-slate-200 print:hidden"><ArrowLeft size={20} /></button><div><h2 className="text-lg font-black text-slate-800 flex items-center gap-2 print:text-2xl">{selectedStaffDetail.name}{selectedStaffDetail.isArchived && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full print:hidden">Archived</span>}</h2><p className="text-xs font-bold text-indigo-500 uppercase tracking-wide print:text-slate-500">{selectedStaffDetail.dept}</p></div></div>
+                                <div className="flex bg-slate-100 p-1 rounded-lg print:hidden"><button onClick={() => setDetailViewType('period')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${detailViewType === 'period' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>งวดนี้</button><button onClick={() => setDetailViewType('yearly')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${detailViewType === 'yearly' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>รายปี</button></div>
                                 <div className="hidden print:block text-right"><p className="text-xs text-slate-400">Printed: {new Date().toLocaleDateString('th-TH')}</p></div>
                             </div>
                             <div className="flex-1 overflow-y-auto p-6 print:overflow-visible print:h-auto print:p-0">
                                 <div className="max-w-4xl mx-auto space-y-6">
-                                    {detailViewType === 'yearly' ? (
-                                        <div className="flex items-center justify-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm print:shadow-none print:border-none print:justify-start print:px-0">
-                                            <button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-slate-100 rounded-full text-slate-400 print:hidden"><ChevronLeft size={20}/></button>
-                                            <span className="text-lg font-black text-slate-700">ประจำปี {selectedYear}</span>
-                                            <button onClick={() => setSelectedYear(y => y + 1)} className="p-1 hover:bg-slate-100 rounded-full text-slate-400 print:hidden"><ChevronRight size={20}/></button>
-                                            {isYearlyLoading && <Loader2 size={16} className="animate-spin text-indigo-500 ml-2" />}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center print:text-left"><span className="inline-block px-4 py-1 bg-white text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 shadow-sm print:shadow-none print:border-none print:px-0 print:text-slate-600">ประจำงวด: {formatPeriodLabel()}</span></div>
-                                    )}
-
+                                    {detailViewType === 'yearly' && (<div className="flex items-center justify-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm print:shadow-none print:border-none print:justify-start print:px-0"><button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-slate-100 rounded-full text-slate-400 print:hidden"><ChevronLeft size={20}/></button><span className="text-lg font-black text-slate-700">ประจำปี {selectedYear}</span><button onClick={() => setSelectedYear(y => y + 1)} className="p-1 hover:bg-slate-100 rounded-full text-slate-400 print:hidden"><ChevronRight size={20}/></button>{isYearlyLoading && <Loader2 size={16} className="animate-spin text-indigo-500 ml-2" />}</div>)}
+                                    {detailViewType === 'period' && (<div className="text-center print:text-left"><span className="inline-block px-4 py-1 bg-white text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 shadow-sm print:shadow-none print:border-none print:px-0 print:text-slate-600">ประจำงวด: {formatPeriodLabel()}</span></div>)}
+                                    
                                     {(() => {
-                                        let stats;
-                                        if (detailViewType === 'period') stats = calculateStats(selectedStaffDetail.id);
-                                        else stats = yearlyStats[selectedStaffDetail.id] || { work:0, off:0, holidayWork:0, leave:0, details:{'ร้อน':0, 'กิจ':0, 'ป่วย':0, 'อื่นๆ':0} };
+                                        const stats = detailViewType === 'period' ? calculateStats(selectedStaffDetail.id) : (yearlyStats[selectedStaffDetail.id] || { work:0, off:0, holidayWork:0, leave:0, details:{'ร้อน':0, 'กิจ':0, 'ป่วย':0, 'อื่นๆ':0} });
                                         return (
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:grid-cols-4">
-                                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 print:border-slate-300">
-                                                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full mb-1 print:hidden"><Briefcase size={24} /></div>
-                                                    <span className="text-3xl font-black text-indigo-700 print:text-slate-800">{stats.work}</span>
-                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">วันทำงาน</span>
-                                                </div>
-                                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 print:border-slate-300">
-                                                    <div className="p-3 bg-blue-50 text-blue-600 rounded-full mb-1 print:hidden"><RefreshCw size={24} /></div>
-                                                    <span className="text-3xl font-black text-blue-600 print:text-slate-800">{stats.holidayWork}</span>
-                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">ทำงานวันหยุด (H)</span>
-                                                </div>
-                                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 print:border-slate-300">
-                                                    <div className="p-3 bg-orange-50 text-orange-600 rounded-full mb-1 print:hidden"><AlertCircle size={24} /></div>
-                                                    <span className="text-3xl font-black text-orange-600 print:text-slate-800">{stats.leave}</span>
-                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">วันลา (รวม)</span>
-                                                </div>
-                                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 print:border-slate-300">
-                                                    <div className="p-3 bg-red-50 text-red-500 rounded-full mb-1 print:hidden"><X size={24} /></div>
-                                                    <span className="text-3xl font-black text-red-500 print:text-slate-800">{stats.off}</span>
-                                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">วันหยุด (OFF)</span>
-                                                </div>
+                                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 print:border-slate-300"><div className="p-3 bg-indigo-50 text-indigo-600 rounded-full mb-1 print:hidden"><Briefcase size={24} /></div><span className="text-3xl font-black text-indigo-700 print:text-slate-800">{stats.work}</span><span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">วันทำงาน</span></div>
+                                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 print:border-slate-300"><div className="p-3 bg-blue-50 text-blue-600 rounded-full mb-1 print:hidden"><RefreshCw size={24} /></div><span className="text-3xl font-black text-blue-600 print:text-slate-800">{stats.holidayWork}</span><span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">ทำงานวันหยุด (H)</span></div>
+                                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 print:border-slate-300"><div className="p-3 bg-orange-50 text-orange-600 rounded-full mb-1 print:hidden"><AlertCircle size={24} /></div><span className="text-3xl font-black text-orange-600 print:text-slate-800">{stats.leave}</span><span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">วันลา (รวม)</span></div>
+                                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center gap-2 print:border-slate-300"><div className="p-3 bg-red-50 text-red-500 rounded-full mb-1 print:hidden"><X size={24} /></div><span className="text-3xl font-black text-red-500 print:text-slate-800">{stats.off}</span><span className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">วันหยุด (OFF)</span></div>
                                             </div>
                                         );
                                     })()}
-
                                     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm print:border-slate-300 print:shadow-none">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <MessageSquare size={16} className="text-slate-400" />
-                                            <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">หมายเหตุพนักงาน</h4>
-                                        </div>
-                                        {isEditMode && !selectedStaffDetail.isArchived ? (
-                                            <textarea className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all placeholder:text-slate-300 min-h-[120px] resize-none print:hidden" placeholder="เพิ่มข้อความหมายเหตุสำหรับพนักงานคนนี้..." value={staffRemarks[selectedStaffDetail.id] || ''} onChange={(e) => handleStaffRemarkChange(selectedStaffDetail.id, e.target.value)} />
-                                        ) : null}
-                                        <div className={`bg-slate-50 border border-slate-100 rounded-xl p-6 min-h-[100px] text-sm text-slate-600 leading-relaxed italic print:bg-white print:border-none print:p-0 ${isEditMode && !selectedStaffDetail.isArchived ? 'hidden print:block' : ''}`}>
-                                            {staffRemarks[selectedStaffDetail.id] ? staffRemarks[selectedStaffDetail.id] : <span className="text-slate-300 not-italic">ไม่มีบันทึกข้อความ</span>}
-                                        </div>
+                                        <div className="flex items-center gap-2 mb-4"><MessageSquare size={16} className="text-slate-400" /><h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">หมายเหตุพนักงาน</h4></div>
+                                        {isEditMode && !selectedStaffDetail.isArchived ? (<textarea className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 focus:outline-none resize-none print-hidden" placeholder="Add remark..." value={staffRemarks[selectedStaffDetail.id] || ''} onChange={(e) => handleStaffRemarkChange(selectedStaffDetail.id, e.target.value)} />) : null}
+                                        <div className={`bg-slate-50 border border-slate-100 rounded-xl p-6 min-h-[100px] text-sm text-slate-600 leading-relaxed italic print:bg-white print:border-none print:p-0 ${isEditMode && !selectedStaffDetail.isArchived ? 'hidden print:block' : ''}`}>{staffRemarks[selectedStaffDetail.id] || <span className="text-slate-300 not-italic">ไม่มีบันทึก</span>}</div>
                                     </div>
-
-                                    {selectedStaffDetail.isArchived && isEditMode && (
-                                        <div className="flex justify-center mt-8 print:hidden">
-                                            <button onClick={() => { restoreStaff(selectedStaffDetail.id); setSelectedStaffDetail(null); }} className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-700 transition-all"><RotateCcw size={18} /> กู้คืนพนักงานคนนี้ (Restore)</button>
-                                        </div>
-                                    )}
+                                    {selectedStaffDetail.isArchived && isEditMode && (<div className="flex justify-center mt-8 print-hidden"><button onClick={() => { restoreStaff(selectedStaffDetail.id); setSelectedStaffDetail(null); }} className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-emerald-700 transition-all"><RotateCcw size={18} /> Restore</button></div>)}
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* --- MODALS (Delete, Login, Password) --- */}
                     {showDeleteConfirm && (
-                        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print:hidden">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200 text-center">
-                            <div className="flex justify-center mb-4"><div className="p-3 bg-amber-100 text-amber-600 rounded-full"><Archive size={32} /></div></div>
-                            <h3 className="text-lg font-black text-slate-800 mb-2">ย้ายไปคลังข้อมูลเก่า?</h3>
-                            <p className="text-sm text-slate-500 mb-6">คุณต้องการย้ายพนักงาน <span className="font-bold text-slate-800">"{staffToDelete?.name}"</span> <br/> ไปเก็บไว้ในคลังพนักงานเก่าใช่หรือไม่? <br/><span className="text-xs text-slate-400">(ข้อมูลจะไม่หายไป และสามารถกู้คืนได้)</span></p>
-                            <div className="flex gap-3">
-                                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">ยกเลิก</button>
-                                <button onClick={confirmArchiveStaff} className="flex-1 py-2 text-sm font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-lg shadow-lg shadow-amber-200 transition-all">ย้ายไป Archive</button>
+                        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print-hidden">
+                            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200 text-center">
+                                <div className="flex justify-center mb-4"><div className="p-3 bg-amber-100 text-amber-600 rounded-full"><Archive size={32} /></div></div>
+                                <h3 className="text-lg font-black text-slate-800 mb-2">ย้ายไปคลังข้อมูลเก่า?</h3>
+                                <p className="text-sm text-slate-500 mb-6">คุณต้องการย้ายพนักงาน <span className="font-bold text-slate-800">"{staffToDelete?.name}"</span> <br/> ไปเก็บไว้ในคลังพนักงานเก่าใช่หรือไม่? <br/><span className="text-xs text-slate-400">(ข้อมูลจะไม่หายไป และสามารถกู้คืนได้)</span></p>
+                                <div className="flex gap-3 mt-4"><button onClick={() => setShowDeleteConfirm(false)} className="flex-1 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg">ยกเลิก</button><button onClick={confirmArchiveStaff} className="flex-1 py-2 text-sm font-bold text-white bg-amber-500 hover:bg-amber-600 rounded-lg shadow-lg">ยืนยัน</button></div>
                             </div>
-                        </div>
                         </div>
                     )}
                     {showLoginModal && (
-                        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print:hidden">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
-                            <div className="flex flex-col items-center gap-3 mb-6"><div className="p-3 bg-indigo-50 text-indigo-600 rounded-full"><Lock size={32} /></div><h3 className="text-lg font-black text-slate-800">Enter Password to Edit</h3><p className="text-xs text-slate-400">Please enter password to enable Edit Mode</p></div>
-                            <form onSubmit={submitLogin}>
-                                <input type="password" autoFocus className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center text-lg font-bold tracking-widest focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none mb-4" placeholder="PIN" value={inputPassword} onChange={e => setInputPassword(e.target.value)} />
-                                <div className="flex gap-2">
-                                    <button type="button" onClick={() => setShowLoginModal(false)} className="flex-1 py-3 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
-                                    <button type="submit" className="flex-1 py-3 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 transition-all">Confirm</button>
-                                </div>
-                            </form>
-                        </div>
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print-hidden">
+                            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+                                <h3 className="text-lg font-black text-slate-800 mb-4 text-center">Enter Password</h3>
+                                <form onSubmit={submitLogin}><input type="password" autoFocus className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-center text-lg font-bold mb-4 outline-none" value={inputPassword} onChange={e => setInputPassword(e.target.value)} /><div className="flex gap-2"><button type="button" onClick={() => setShowLoginModal(false)} className="flex-1 py-2 bg-slate-100 rounded-lg text-slate-600 font-bold">Cancel</button><button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-bold">Confirm</button></div></form>
+                            </div>
                         </div>
                     )}
                     {showChangePasswordModal && (
-                        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print:hidden">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
-                            <div className="flex items-center justify-between mb-6"><h3 className="text-lg font-black text-slate-800">เปลี่ยนรหัสผ่าน</h3><button onClick={() => setShowChangePasswordModal(false)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button></div>
-                            <form onSubmit={submitChangePassword} className="space-y-4">
-                                <div><label className="text-xs font-bold text-slate-500 mb-1 block">รหัสผ่านเดิม (Old Password)</label><input type="password" autoFocus className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-bold focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" value={oldPasswordInput} onChange={e => setOldPasswordInput(e.target.value)} /></div>
-                                <div className="h-px bg-slate-100 my-2"></div>
-                                <div><label className="text-xs font-bold text-slate-500 mb-1 block">รหัสผ่านใหม่ (New Password)</label><input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-bold focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" value={newPasswordInput} onChange={e => setNewPasswordInput(e.target.value)} /></div>
-                                <div><label className="text-xs font-bold text-slate-500 mb-1 block">ยืนยันรหัสผ่านใหม่ (Confirm Password)</label><input type="text" className={`w-full bg-slate-50 border rounded-xl px-4 py-3 text-lg font-bold focus:ring-2 focus:ring-indigo-100 outline-none ${confirmPasswordInput && newPasswordInput !== confirmPasswordInput ? 'border-red-300 focus:border-red-500' : 'border-slate-200 focus:border-indigo-500'}`} value={confirmPasswordInput} onChange={e => setConfirmPasswordInput(e.target.value)} />{confirmPasswordInput && newPasswordInput !== confirmPasswordInput && (<p className="text-[10px] text-red-500 mt-1 font-bold">* รหัสผ่านไม่ตรงกัน</p>)}</div>
-                                <button type="submit" disabled={isLoading} className="w-full py-3 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-4">{isLoading && <Loader2 size={16} className="animate-spin" />} บันทึกรหัสผ่านใหม่</button>
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 print-hidden">
+                        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+                            <div className="flex justify-between mb-4"><h3 className="text-lg font-black text-slate-800">Change Password</h3><button onClick={() => setShowChangePasswordModal(false)}><X size={20}/></button></div>
+                            <form onSubmit={submitChangePassword} className="space-y-3">
+                                <input type="password" placeholder="Old Password" autoFocus className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none" value={oldPasswordInput} onChange={e => setOldPasswordInput(e.target.value)} />
+                                <input type="text" placeholder="New Password" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none" value={newPasswordInput} onChange={e => setNewPasswordInput(e.target.value)} />
+                                <input type="text" placeholder="Confirm New" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 outline-none" value={confirmPasswordInput} onChange={e => setConfirmPasswordInput(e.target.value)} />
+                                <button type="submit" disabled={isLoading} className="w-full py-2 bg-indigo-600 text-white rounded-xl font-bold mt-2">Save</button>
                             </form>
                         </div>
                         </div>
                     )}
 
                     {/* --- HEADER NAV (Hidden in Print) --- */}
-                    <nav className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-50 flex items-center justify-between shadow-sm flex-none print:hidden">
+                    <nav className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-50 flex items-center justify-between shadow-sm flex-none print-hidden">
                         <div className="flex items-center gap-4">
                             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><Menu size={20} /></button>
                             <div><h1 className="font-black text-lg tracking-tighter text-indigo-600 uppercase leading-none">Shift Master</h1><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Control Panel</p></div>
@@ -674,9 +355,9 @@
                                 </div>
                             )}
                             <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200">
-                                <button onClick={() => setBaseDate(new Date(baseDate.getFullYear(), baseDate.getMonth() - 1, 15))} className="p-1 hover:bg-white rounded shadow-sm text-slate-500 transition-colors"><ChevronLeft size={16}/></button>
-                                <span className="px-4 text-[11px] font-black uppercase flex items-center text-slate-700 min-w-[200px] justify-center tracking-tighter whitespace-nowrap text-center">{formatPeriodLabel()}</span>
-                                <button onClick={() => setBaseDate(new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 15))} className="p-1 hover:bg-white rounded shadow-sm text-slate-500 transition-colors"><ChevronRight size={16}/></button>
+                                <button onClick={() => setBaseDate(new Date(baseDate.getFullYear(), baseDate.getMonth() - 1, 15))} className="p-1 hover:bg-white rounded shadow-sm text-slate-500"><ChevronLeft size={16}/></button>
+                                <span className="px-4 text-[11px] font-black uppercase text-slate-700 min-w-[150px] text-center flex items-center justify-center">{formatPeriodLabel()}</span>
+                                <button onClick={() => setBaseDate(new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 15))} className="p-1 hover:bg-white rounded shadow-sm text-slate-500"><ChevronRight size={16}/></button>
                             </div>
                             <div className="h-6 w-px bg-slate-200 mx-1"></div>
                             {isEditMode && (
@@ -685,62 +366,39 @@
                         </div>
                     </nav>
 
-                    {/* --- MAIN LAYOUT --- */}
                     <div className="flex relative flex-1 overflow-hidden">
-                        {/* SIDEBAR (Hidden in Print) */}
-                        <aside className={`bg-white border-r border-slate-200 transition-all duration-300 overflow-hidden h-full overflow-y-auto print:hidden ${isSidebarOpen ? 'w-72' : 'w-0'}`}>
+                        <aside className={`bg-white border-r border-slate-200 transition-all duration-300 overflow-hidden h-full overflow-y-auto print-hidden ${isSidebarOpen ? 'w-72' : 'w-0'}`}>
                             <div className="p-4 md:p-6 w-72 flex flex-col gap-6">
-                                {/* MENU OPTIONS (Collapsible) */}
+                                {/* Menu Options */}
                                 <div className="border-b border-slate-100 pb-4">
-                                    <button onClick={() => toggleSection('menu')} className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 hover:text-slate-600 transition-colors">
-                                        <span className="flex items-center gap-2"><Settings size={12}/> MENU OPTIONS</span>
-                                        {expandedSections.menu ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
-                                    </button>
+                                    <button onClick={() => toggleSection('menu')} className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 hover:text-slate-600"><span className="flex items-center gap-2"><Settings size={12}/> MENU OPTIONS</span>{expandedSections.menu ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</button>
                                     {expandedSections.menu && (
                                         <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
-                                            <div className="flex bg-slate-50 p-1 rounded-lg">
-                                                <button onClick={() => { setViewMode('table'); setSelectedStaffDetail(null); if(window.innerWidth < 768) setIsSidebarOpen(false); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><CalendarDays size={14} /> ตารางเวร</button>
-                                                <button onClick={() => { setViewMode('dashboard'); setSelectedStaffDetail(null); if(window.innerWidth < 768) setIsSidebarOpen(false); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${viewMode === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><LayoutDashboard size={14} /> สรุปผล</button>
-                                            </div>
-                                            <button onClick={handleEditModeToggle} className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-colors border ${isEditMode ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
-                                                {isEditMode ? <Unlock size={14} /> : <Edit3 size={14} />}
-                                                {isEditMode ? 'กำลังแก้ไข (Editing)' : 'Edit / Update'}
-                                                {isEditMode && <div className="ml-auto w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>}
-                                            </button>
-                                            {isEditMode && (
-                                                <button onClick={openChangePasswordModal} className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-colors bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"><KeyRound size={14} /> เปลี่ยนรหัสผ่าน</button>
-                                            )}
+                                            <div className="flex bg-slate-50 p-1 rounded-lg"><button onClick={() => { setViewMode('table'); setSelectedStaffDetail(null); if(window.innerWidth<768) setIsSidebarOpen(false); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${viewMode==='table'?'bg-white text-indigo-600 shadow-sm':'text-slate-500 hover:text-slate-700'}`}><CalendarDays size={14}/> ตารางเวร</button><button onClick={() => { setViewMode('dashboard'); setSelectedStaffDetail(null); if(window.innerWidth<768) setIsSidebarOpen(false); }} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-bold transition-all ${viewMode==='dashboard'?'bg-white text-indigo-600 shadow-sm':'text-slate-500 hover:text-slate-700'}`}><LayoutDashboard size={14}/> สรุปผล</button></div>
+                                            <button onClick={handleEditModeToggle} className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-colors border ${isEditMode ? 'bg-orange-50 text-orange-600 border-orange-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>{isEditMode ? <Unlock size={14}/> : <Edit3 size={14}/>}{isEditMode ? 'กำลังแก้ไข (Editing)' : 'Edit / Update'}</button>
+                                            {isEditMode && <button onClick={openChangePasswordModal} className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-colors bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"><KeyRound size={14}/> เปลี่ยนรหัสผ่าน</button>}
                                         </div>
                                     )}
                                 </div>
-                                {/* DEPARTMENTS SECTION */}
+                                {/* Depts */}
                                 <div className="border-b border-slate-100 pb-4">
-                                    <button onClick={() => toggleSection('depts')} className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 hover:text-slate-600 transition-colors"><span className="flex items-center gap-2"><Briefcase size={12}/> DEPARTMENTS</span>{expandedSections.depts ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</button>
+                                    <button onClick={() => toggleSection('depts')} className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 hover:text-slate-600"><span className="flex items-center gap-2"><Briefcase size={12}/> DEPARTMENTS</span>{expandedSections.depts ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</button>
                                     {expandedSections.depts && (
                                         <div className="space-y-1 max-h-[200px] overflow-y-auto pr-1 animate-in slide-in-from-top-2 duration-200">
-                                            {departments.map((d, idx) => (
-                                                <div key={d} onClick={() => setCurrentDept(d)} className={`group flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-all ${currentDept === d ? 'bg-indigo-50 border-indigo-100 text-indigo-700 font-black shadow-sm' : 'bg-slate-50/50 border-transparent text-slate-500 hover:bg-slate-50'}`}>
-                                                    {editingDeptIndex === idx ? (
-                                                        <div className="flex items-center gap-1 w-full" onClick={e => e.stopPropagation()}><input autoFocus type="text" value={editingDeptValue} onChange={e => setEditingDeptValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && saveEditDept(d)} className="flex-1 text-xs bg-white border border-indigo-200 rounded px-2 py-1 outline-none font-bold" /><button onClick={() => saveEditDept(d)} className="text-emerald-500 p-1"><Check size={14}/></button></div>
-                                                    ) : (
-                                                        <><span className="text-xs truncate">{d}</span>{isEditMode && (<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={(e) => { e.stopPropagation(); startEditDept(idx, d); }} className="text-slate-400 hover:text-indigo-600 p-1"><Edit3 size={12} /></button><button onClick={(e) => { e.stopPropagation(); removeDept(d); }} className="text-slate-300 hover:text-red-500 p-1"><Trash2 size={12} /></button></div>)}</>
-                                                    )}
-                                                </div>
-                                            ))}
-                                            {isEditMode && (<div className="flex gap-2 mt-2"><input type="text" value={newDeptName} onChange={(e) => setNewDeptName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddDept()} placeholder="New Dept..." className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-300" /><button onClick={handleAddDept} className="bg-slate-800 text-white p-2 rounded-lg hover:bg-slate-900 transition-colors"><Plus size={16} /></button></div>)}
+                                            {departments.map((d, idx) => (<div key={d} onClick={() => setCurrentDept(d)} className={`group flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-all ${currentDept === d ? 'bg-indigo-50 border-indigo-100 text-indigo-700 font-black shadow-sm' : 'bg-slate-50/50 border-transparent text-slate-500 hover:bg-slate-50'}`}>{editingDeptIndex === idx ? (<div className="flex items-center gap-1 w-full" onClick={e => e.stopPropagation()}><input autoFocus type="text" value={editingDeptValue} onChange={e => setEditingDeptValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && saveEditDept(d)} className="flex-1 text-xs bg-white border border-indigo-200 rounded px-2 py-1 outline-none font-bold" /><button onClick={() => saveEditDept(d)} className="text-emerald-500 p-1"><Check size={14}/></button></div>) : (<><span className="text-xs truncate">{d}</span>{isEditMode && (<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"><button onClick={(e) => { e.stopPropagation(); startEditDept(idx, d); }} className="text-slate-400 hover:text-indigo-600 p-1"><Edit3 size={12} /></button><button onClick={(e) => { e.stopPropagation(); removeDept(d); }} className="text-slate-300 hover:text-red-500 p-1"><Trash2 size={12} /></button></div>)}</>)}</div>))}
+                                            {isEditMode && (<div className="flex gap-2 mt-2"><input type="text" value={newDeptName} onChange={(e) => setNewDeptName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddDept()} placeholder="New Dept..." className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-300" /><button onClick={handleAddDept} className="bg-slate-800 text-white p-2 rounded-lg hover:bg-slate-900"><Plus size={16} /></button></div>)}
                                         </div>
                                     )}
                                 </div>
-                                {/* STAFF SECTION */}
+                                {/* Staff */}
                                 <div>
-                                    <button onClick={() => toggleSection('staff')} className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 hover:text-slate-600 transition-colors"><span className="flex items-center gap-2"><Users size={12}/> {currentDept === 'ALL' ? 'ALL' : currentDept.toUpperCase()} STAFF</span>{expandedSections.staff ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</button>
+                                    <button onClick={() => toggleSection('staff')} className="w-full flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 hover:text-slate-600"><span className="flex items-center gap-2"><Users size={12}/> STAFF</span>{expandedSections.staff ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</button>
                                     {expandedSections.staff && (
                                         <div className="animate-in slide-in-from-top-2 duration-200">
                                             <div className="flex items-center justify-between mb-3"><div className="relative flex-1 mr-2"><Search size={12} className="absolute left-2 top-2 text-slate-400"/><input type="text" placeholder="Search..." value={staffSearch} onChange={(e) => setStaffSearch(e.target.value)} className="w-full text-xs pl-7 pr-2 py-1.5 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-indigo-300" /></div><button onClick={() => setShowArchivedList(!showArchivedList)} className={`text-[9px] px-2 py-1.5 rounded border transition-colors whitespace-nowrap ${showArchivedList ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'}`}>{showArchivedList ? 'Active' : 'Archive'}</button></div>
-                                            {isEditMode && !showArchivedList && currentDept !== 'ALL' && (<div className="flex gap-2 mb-4"><input type="text" value={newStaffName} onChange={(e) => setNewStaffName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddStaff()} placeholder="Add Staff..." className="flex-1 text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 ring-indigo-50 border-indigo-200" /><button onClick={handleAddStaff} className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-100 transition-all"><Plus size={16} /></button></div>)}
+                                            {isEditMode && !showArchivedList && currentDept !== 'ALL' && (<div className="flex gap-2 mb-4"><input type="text" value={newStaffName} onChange={(e) => setNewStaffName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddStaff()} placeholder="Add Staff..." className="flex-1 text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 ring-indigo-50 border-indigo-200" /><button onClick={handleAddStaff} className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 shadow-md transition-all"><Plus size={16} /></button></div>)}
                                             <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
-                                                {getFilteredStaff().map((s, idx) => (<div key={s.id} onClick={() => setSelectedStaffDetail(s)} className={`flex items-center justify-between p-2.5 border rounded-lg group transition-all hover:shadow-sm cursor-pointer ${s.isArchived ? 'bg-slate-50 border-slate-200 grayscale opacity-80' : 'bg-white border-slate-100 hover:bg-indigo-50'}`}><span className="text-xs font-bold text-slate-600 truncate flex-1">{idx + 1}. {s.name}</span>{isEditMode && !s.isArchived && (<button onClick={(e) => { e.stopPropagation(); promptDeleteStaff(s); }} className="text-slate-300 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-all ml-2" title="Archive Staff"><Archive size={12} /></button>)}{s.isArchived && <span className="text-[9px] text-slate-400 italic ml-2">Archived</span>}</div>))}
-                                                {getFilteredStaff().length === 0 && (<div className="text-center py-8 border-2 border-dashed border-slate-100 rounded-xl"><p className="text-[10px] font-bold text-slate-300 uppercase italic whitespace-nowrap">{staffSearch ? 'No match' : (showArchivedList ? 'No archived staff' : 'No staff found')}</p></div>)}
+                                                {getFilteredStaff().map((s, idx) => (<div key={s.id} onClick={() => setSelectedStaffDetail(s)} className={`flex items-center justify-between p-2.5 border rounded-lg group transition-all hover:shadow-sm cursor-pointer ${s.isArchived ? 'bg-slate-50 border-slate-200 grayscale opacity-80' : 'bg-white border-slate-100 hover:bg-indigo-50'}`}><span className="text-xs font-bold text-slate-600 truncate flex-1">{idx + 1}. {s.name}</span>{isEditMode && !s.isArchived && (<button onClick={(e) => { e.stopPropagation(); promptDeleteStaff(s); }} className="text-slate-300 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-all ml-2"><Archive size={12} /></button>)}{s.isArchived && <span className="text-[9px] text-slate-400 italic ml-2">Archived</span>}</div>))}
                                             </div>
                                         </div>
                                     )}
@@ -749,7 +407,7 @@
                         </aside>
 
                         <main className="flex-1 overflow-x-auto p-4 md:p-6 transition-all duration-300 flex flex-col h-full print:p-0 print:overflow-visible">
-                            {/* --- Print Header (Visible ONLY on Print) --- */}
+                            {/* --- Print Header --- */}
                             <div className="hidden print:block mb-6 p-4 border-b border-slate-300">
                                 <h1 className="text-2xl font-black text-slate-900 mb-1">Shift Master - {currentDept === 'ALL' ? 'All Departments' : currentDept}</h1>
                                 <div className="flex justify-between items-end"><p className="text-sm font-bold text-slate-600">ประจำงวด: {formatPeriodLabel()}</p><p className="text-[10px] text-slate-400">พิมพ์เมื่อ: {new Date().toLocaleString('th-TH')}</p></div>
@@ -766,23 +424,23 @@
                             {/* ... Main Content (Table or Dashboard) ... */}
                             {!selectedStaffDetail && (
                                 viewMode === 'table' ? (
-                                    <div className={`bg-white rounded-xl border border-slate-100 shadow-sm overflow-auto transition-all duration-300 flex-1 print:shadow-none print:border-none print:overflow-visible ${isSidebarOpen ? 'min-w-[1400px]' : 'w-full min-w-0'}`}>
+                                    <div className={`bg-white rounded-xl border border-slate-200 shadow-none overflow-auto transition-all duration-300 flex-1 print:border-slate-300 print:overflow-visible ${isSidebarOpen ? 'min-w-[1400px]' : 'w-full min-w-0'}`}>
                                         <table className={`w-full border-separate border-spacing-0 ${!isSidebarOpen && 'table-fixed'}`}>
                                             <thead className="sticky top-0 z-40 bg-white print:static">
                                                 <tr>
-                                                    <th className={`p-5 text-left sticky left-0 bg-slate-100/90 backdrop-blur-md z-30 border-b border-slate-200 rounded-tl-xl transition-all print:bg-white print:border-slate-300 ${isSidebarOpen ? 'w-48' : 'w-40'}`}><span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{currentDept === 'ALL' ? 'ALL' : currentDept}</span></th>
+                                                    <th className={`p-5 text-left sticky left-0 bg-white z-30 border-b border-slate-200 rounded-tl-xl transition-all print:border-slate-300 ${isSidebarOpen ? 'w-48' : 'w-40'}`}><span className="text-sm font-black text-slate-700 uppercase tracking-widest">{currentDept === 'ALL' ? 'ALL' : currentDept}</span></th>
                                                     {currentDays.map((date, idx) => {
                                                         const dateStr = date.toISOString().split('T')[0];
                                                         const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                                                         const isHighlighted = highlightedDays.includes(dateStr);
-                                                        return (<th key={dateStr} onClick={() => toggleHighlight(dateStr)} className={`border-b border-slate-200 text-center cursor-pointer transition-all sticky top-0 z-20 print:border-slate-300 ${isSidebarOpen ? 'min-w-[42px] p-2' : 'min-w-[28px] p-1'} ${isHighlighted ? 'bg-yellow-300' : isWeekend ? 'bg-red-100/50' : 'bg-slate-50/80 hover:bg-slate-100'} print:bg-transparent`}><div className={`font-black tracking-tighter ${isHighlighted ? 'text-yellow-800' : isWeekend ? 'text-red-500' : 'text-slate-400'} ${isSidebarOpen ? 'text-[9px]' : 'text-[8px]'} print:text-black`}>{['อา','จ','อ','พ','พฤ','ศ','ส'][date.getDay()]}</div><div className={`font-black mt-0.5 ${isHighlighted ? 'text-yellow-900' : isWeekend ? 'text-red-700' : 'text-slate-800'} ${isSidebarOpen ? 'text-sm' : 'text-xs'} print:text-black`}>{date.getDate()}</div></th>);
+                                                        return (<th key={dateStr} onClick={() => toggleHighlight(dateStr)} className={`border-b border-slate-200 text-center cursor-pointer transition-all sticky top-0 z-20 print:border-slate-300 ${isSidebarOpen ? 'min-w-[42px] p-2' : 'min-w-[28px] p-1'} ${isHighlighted ? 'bg-yellow-300' : isWeekend ? 'bg-red-100/50' : 'bg-white hover:bg-slate-50'}`}><div className={`font-black tracking-tighter ${isHighlighted ? 'text-yellow-800' : isWeekend ? 'text-red-500' : 'text-slate-400'} ${isSidebarOpen ? 'text-[9px]' : 'text-[8px]'} print:text-black`}>{['อา','จ','อ','พ','พฤ','ศ','ส'][date.getDay()]}</div><div className={`font-black mt-0.5 ${isHighlighted ? 'text-yellow-900' : isWeekend ? 'text-red-700' : 'text-slate-800'} ${isSidebarOpen ? 'text-sm' : 'text-xs'} print:text-black`}>{date.getDate()}</div></th>);
                                                     })}
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-50 print:divide-slate-200">
                                                 {getFilteredStaff().map(employee => (
                                                     <tr key={employee.id} className="hover:bg-indigo-50/30 group print:break-inside-avoid">
-                                                        <td className={`font-black text-slate-600 sticky left-0 bg-white group-hover:bg-indigo-50/30 z-10 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] border-r border-slate-50 transition-all print:border-slate-300 print:shadow-none ${isSidebarOpen ? 'p-4 text-xs' : 'p-2 text-[10px] truncate'}`}>{employee.name}{currentDept === 'ALL' && <div className="text-[8px] text-slate-400 font-normal mt-0.5">{employee.dept}</div>}</td>
+                                                        <td className={`font-black text-slate-700 sticky left-0 bg-white group-hover:bg-indigo-50/30 z-10 shadow-[4px_0_12px_-4px_rgba(0,0,0,0.05)] border-r border-slate-50 transition-all print:border-slate-300 print:shadow-none ${isSidebarOpen ? 'p-4 text-sm' : 'p-2 text-xs truncate'}`}>{employee.name}{currentDept === 'ALL' && <div className="text-[10px] text-slate-500 font-normal mt-0.5">{employee.dept}</div>}</td>
                                                         {currentDays.map(date => {
                                                             const dateStr = date.toISOString().split('T')[0];
                                                             const key = `${employee.id}-${dateStr}`;
@@ -792,13 +450,13 @@
                                                             const hasRemark = data.remark && data.remark.trim() !== '';
                                                             const getStyle = (s) => {
                                                                 switch(s) {
-                                                                    case 'N': return 'bg-slate-800 text-white border-slate-800 print:bg-gray-800 print:text-white print:border-gray-800';
-                                                                    case 'OFF': return 'bg-red-500 text-white border-red-500 print:bg-red-500 print:text-white print:border-red-500';
-                                                                    case 'H': return 'bg-blue-500 text-white border-blue-500 print:bg-blue-500 print:text-white print:border-blue-500';
-                                                                    case 'ร้อน': return 'bg-orange-500 text-white border-orange-500 print:bg-orange-500 print:text-white print:border-orange-500'; 
-                                                                    case 'กิจ': return 'bg-red-500 text-white border-red-500 print:bg-red-500 print:text-white print:border-red-500'; 
-                                                                    case 'ป่วย': return 'bg-emerald-500 text-white border-emerald-500 print:bg-emerald-500 print:text-white print:border-emerald-500';
-                                                                    case 'อื่นๆ': return 'bg-purple-500 text-white border-purple-500 print:bg-purple-500 print:text-white print:border-purple-500'; 
+                                                                    case 'N': return 'bg-slate-800 text-white border-slate-800';
+                                                                    case 'OFF': return 'bg-red-500 text-white border-red-500';
+                                                                    case 'H': return 'bg-blue-500 text-white border-blue-500';
+                                                                    case 'ร้อน': return 'bg-orange-500 text-white border-orange-500'; 
+                                                                    case 'กิจ': return 'bg-red-500 text-white border-red-500'; 
+                                                                    case 'ป่วย': return 'bg-emerald-500 text-white border-emerald-500';
+                                                                    case 'อื่นๆ': return 'bg-purple-500 text-white border-purple-500'; 
                                                                     default: return 'bg-white text-slate-700 border-slate-200 print:border-slate-300';
                                                                 }
                                                             };
@@ -810,13 +468,15 @@
                                         </table>
                                     </div>
                                 ) : (
-                                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 min-h-[500px] print:shadow-none print:border-none print:p-0">
+                                    <div className="bg-white rounded-xl border border-slate-200 shadow-none p-6 min-h-[500px] print:border-slate-300 print:p-0">
                                         <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 print:hidden">
                                             <div className="flex items-center gap-3"><div className="p-3 bg-indigo-50 rounded-full text-indigo-600"><LayoutDashboard size={24} /></div><div><h2 className="text-xl font-black text-slate-800 uppercase tracking-tighter">Summary Dashboard</h2><p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{currentDept === 'ALL' ? 'ALL DEPARTMENTS' : currentDept}</p></div></div>
                                             <div className="flex bg-slate-100 p-1 rounded-lg"><button onClick={() => setDashboardType('period')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${dashboardType === 'period' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>ประจำงวด (Period)</button><button onClick={() => setDashboardType('yearly')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${dashboardType === 'yearly' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>รายปี (Yearly)</button></div>
                                         </div>
+
                                         {dashboardType === 'yearly' && (<div className="flex items-center justify-center gap-4 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100 print:hidden"><button onClick={() => setSelectedYear(y => y - 1)} className="p-1 hover:bg-white rounded-full text-slate-400 hover:text-slate-600 transition-colors"><ChevronLeft size={20} /></button><span className="text-lg font-black text-slate-700 tracking-tight">ประจำปี {selectedYear}</span><button onClick={() => setSelectedYear(y => y + 1)} className="p-1 hover:bg-white rounded-full text-slate-400 hover:text-slate-600 transition-colors"><ChevronRight size={20} /></button>{isYearlyLoading && <Loader2 size={16} className="animate-spin text-indigo-500 ml-2" />}</div>)}
                                         {dashboardType === 'period' && (<div className="mb-6 text-center print:hidden"><span className="inline-block px-4 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100">{formatPeriodLabel()}</span></div>)}
+
                                         <div className="overflow-hidden rounded-lg border border-slate-200 print:border-slate-300">
                                             <table className="w-full text-left border-collapse">
                                                 <thead>
