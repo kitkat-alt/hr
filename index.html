@@ -77,10 +77,11 @@
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQyzMoNR0hJp28cyPgpxmRew_W10WxesiYSFOwuiQ_NhjrtbTzJSw9nKabFfRGL3fyGw/exec"; 
 
         const App = () => {
-            const [departments, setDepartments] = useState(['Front Office', 'Housekeeping', 'Kitchen']);
-            const [currentDept, setCurrentDept] = useState('Front Office');
+            // ลบ Mock Data ของ Departments ออก (เริ่มต้นเป็น Array ว่าง)
+            const [departments, setDepartments] = useState([]);
+            const [currentDept, setCurrentDept] = useState('');
             
-            // เริ่มต้นด้วย Array ว่าง (รอโหลดจาก Backend)
+            // Staff เริ่มต้นด้วย Array ว่าง
             const [staff, setStaff] = useState([]);
 
             const [schedule, setSchedule] = useState({});
@@ -169,7 +170,15 @@
                     setHighlightedDays(data.highlightedDays || []);
                     setStaffRemarks(data.staffRemarks || {});
                     if (data.appPassword) setServerPassword(data.appPassword);
-                    if (data.departments && data.departments.length > 0) setDepartments(data.departments);
+                    if (data.departments && data.departments.length > 0) {
+                        setDepartments(data.departments);
+                        // ถ้ายังไม่ได้เลือกแผนก ให้เลือกแผนกแรกอัตโนมัติ
+                        setCurrentDept(prev => {
+                            if (prev === '' || prev === 'ALL') return prev || data.departments[0];
+                            // ถ้าแผนกเดิมยังอยู่ในลิสต์ ให้ใช้ต่อ ถ้าไม่มีให้ใช้แผนกแรก
+                            return data.departments.includes(prev) ? prev : data.departments[0];
+                        });
+                    }
                     showStatus('success', 'อัปเดตข้อมูลเรียบร้อย');
                 } catch (err) { console.error(err); } finally { setIsLoading(false); }
             }, [periodKey, currentDept]);
